@@ -1231,7 +1231,7 @@ html, body {
       <div class="stepper-step"><div class="dot">4</div><div class="label">EXPORT</div></div>
     </div>
     <div class="section-label">YOUR BRIEF</div>
-    <textarea id="brief-input" class="brief-input" placeholder='Change our welcome approach to increase engagement'></textarea>
+    <textarea id="brief-input" class="brief-input"></textarea>
     <div class="brief-actions">
       <button class="btn-attach">📎 Attach document</button>
     </div>
@@ -1674,11 +1674,33 @@ function attachBrainstormLink() {
   });
 }
 
+// Typewriter for form fields (textarea/input) — uses .value
+async function typeIntoField(field, text, speed) {
+  field._typing = true;
+  field.value = '';
+  for (let i = 0; i < text.length; i++) {
+    if (!field._typing) return; // user took over
+    field.value = text.substring(0, i + 1);
+    await sleep(speed);
+  }
+  field._typing = false;
+  // Sync app state
+  state.brief = field.value;
+}
+
 // ──────────────────────────────────────────────────────
 // Screen 1: Brief
 // ──────────────────────────────────────────────────────
 $('#brief-input').addEventListener('input', (e) => {
   state.brief = e.target.value;
+});
+
+// Cancel auto-typing if user interacts with the field
+$('#brief-input').addEventListener('focus', () => {
+  $('#brief-input')._typing = false;
+});
+$('#brief-input').addEventListener('keydown', () => {
+  $('#brief-input')._typing = false;
 });
 
 $('#submit-brief').addEventListener('click', async () => {
@@ -1975,7 +1997,7 @@ async function playDialogue(name) {
     chat.appendChild(msg);
     chat.scrollTop = chat.scrollHeight;
     await sleep(380);
-    const speed = line.role === 'you' ? 40 : 28;
+    const speed = line.role === 'you' ? 75 : 35;
     await typewriter(bubble, line.text, speed);
     chat.scrollTop = chat.scrollHeight;
     await sleep(280);
@@ -2065,7 +2087,7 @@ async function appendMessage(chatEl, role, text) {
   chatEl.appendChild(msg);
   chatEl.scrollTop = chatEl.scrollHeight;
   await sleep(200);
-  await typewriter(bubble, text, role === 'you' ? 40 : 28);
+  await typewriter(bubble, text, role === 'you' ? 75 : 35);
   chatEl.scrollTop = chatEl.scrollHeight;
 }
 
@@ -2103,6 +2125,16 @@ $$('[data-go]').forEach(a => {
 // Initial render
 // ──────────────────────────────────────────────────────
 renderReview();
+
+// After a short delay, auto-type the example brief into the input
+// so the demo opens with a visible producer-typing moment.
+// Cancels if the user focuses or types into the field.
+setTimeout(() => {
+  const field = $('#brief-input');
+  if (!field.value && document.activeElement !== field) {
+    typeIntoField(field, 'Change our welcome approach to increase engagement', 75);
+  }
+}, 700);
 
 </script>
 </body>
